@@ -66,6 +66,7 @@ return {
     opts = {
       disable_inline_completion = true, -- Use blink.cmp instead
       disable_keymaps = true,
+      log_level = 'error', -- Hide nvim-cmp warning, keep errors
     },
   },
   {
