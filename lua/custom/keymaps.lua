@@ -2,6 +2,7 @@
 
 -- Save keymap
 vim.keymap.set('n', '<leader>ww', '<cmd>w<cr>', { desc = '[W]rite file' })
+vim.keymap.set('n', '<leader>wa', '<cmd>wa<cr>', { desc = '[W]rite [A]ll buffers' })
 
 -- Quit keymaps
 vim.keymap.set('n', '<leader>qq', '<cmd>qa<cr>', { desc = '[Q]uit all' })
