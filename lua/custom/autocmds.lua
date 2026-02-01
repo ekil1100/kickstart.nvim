@@ -10,6 +10,14 @@ vim.api.nvim_create_autocmd({ 'BufRead', 'BufNewFile' }, {
   end,
 })
 
+-- Auto reload files changed outside of Neovim
+vim.o.autoread = true
+vim.api.nvim_create_autocmd({ 'FocusGained', 'CursorHold' }, {
+  desc = 'Check for file changes outside of Neovim',
+  group = vim.api.nvim_create_augroup('custom-autoread', { clear = true }),
+  command = 'checktime',
+})
+
 -- Auto switch to English input method (ABC) in Normal mode
 local im_english = 'com.apple.keylayout.ABC'
 local im_prev = im_english
