@@ -18,8 +18,10 @@ Leader 键: `<Space>`
 | `<leader>wq` | 保存全部并退出 |
 | `<leader>tc` | 关闭当前 Tab |
 | `<leader>to` | 只保留当前 Tab |
+| `<leader>wa` | 保存全部文件 |
 | `<leader>rl` | 重新加载配置 |
 | `<leader>ls` | Lazy 同步插件 |
+| `<leader>re` | 刷新 buffer (从磁盘重新加载) |
 
 ## 搜索 (Telescope)
 
