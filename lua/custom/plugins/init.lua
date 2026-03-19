@@ -66,8 +66,22 @@ return {
     opts = {
       disable_inline_completion = true, -- Use blink.cmp instead
       disable_keymaps = true,
-      log_level = 'error', -- Hide nvim-cmp warning, keep errors
+      log_level = 'error', -- Hide noisy warning, keep errors
     },
+    config = function(_, opts)
+      -- Work around supermaven-nvim warning when using blink.cmp instead of nvim-cmp.
+      local log = require 'supermaven-nvim.logger'
+      local orig_warn = log.warn
+
+      log.warn = function(self, msg)
+        if msg and msg:match 'nvim%-cmp is not available' then
+          return
+        end
+        return orig_warn(self, msg)
+      end
+
+      require('supermaven-nvim').setup(opts)
+    end,
   },
   {
     'huijiro/blink-cmp-supermaven',
