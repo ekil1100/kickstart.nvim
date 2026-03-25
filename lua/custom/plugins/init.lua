@@ -6,6 +6,20 @@ return {
   -- Zig language support
   'ziglang/zig.vim',
 
+  -- Neo-tree: show hidden files by default
+  {
+    'nvim-neo-tree/neo-tree.nvim',
+    opts = {
+      filesystem = {
+        filtered_items = {
+          visible = true,
+          hide_dotfiles = false,
+          hide_gitignored = false,
+        },
+      },
+    },
+  },
+
   -- Session management
   {
     'folke/persistence.nvim',
