@@ -99,7 +99,7 @@ do
   vim.g.maplocalleader = ' '
 
   -- Set to true if you have a Nerd Font installed and selected in the terminal
-  vim.g.have_nerd_font = false
+  vim.g.have_nerd_font = true
 
   -- [[ Setting options ]]
   --  See `:help vim.o`
@@ -414,6 +414,10 @@ do
       { '<leader>t', group = '[T]oggle' },
       { '<leader>h', group = 'Git [H]unk', mode = { 'n', 'v' } }, -- Enable gitsigns recommended keymaps first
       { 'gr', group = 'LSP Actions', mode = { 'n' } },
+      { '<leader>g', group = '[G]it' },
+      { '<leader>x', group = 'Trouble' },
+      { '<leader>c', group = '[C]ode' },
+      { '<leader>q', group = '[Q]uickfix/Session' },
     },
   }
 
@@ -423,18 +427,16 @@ do
   -- change the command under that to load whatever the name of that colorscheme is.
   --
   -- If you want to see what colorschemes are already installed, you can use `:Telescope colorscheme`.
-  vim.pack.add { gh 'folke/tokyonight.nvim' }
-  ---@diagnostic disable-next-line: missing-fields
-  require('tokyonight').setup {
-    styles = {
-      comments = { italic = false }, -- Disable italics in comments
-    },
+  vim.pack.add { { src = gh 'catppuccin/nvim', name = 'catppuccin' } }
+  require('catppuccin').setup {
+    flavour = 'mocha',
+    no_italic = true,
   }
 
   -- Load the colorscheme here.
   -- Like many other themes, this one has different styles, and you could load
-  -- any other, such as 'tokyonight-storm', 'tokyonight-moon', or 'tokyonight-day'.
-  vim.cmd.colorscheme 'tokyonight-night'
+  -- any other, such as 'catppuccin-latte', 'catppuccin-frappe', or 'catppuccin-macchiato'.
+  vim.cmd.colorscheme 'catppuccin'
 
   -- Highlight todo, notes, etc in comments
   vim.pack.add { gh 'folke/todo-comments.nvim' }
@@ -532,15 +534,24 @@ do
 
   -- See `:help telescope` and `:help telescope.setup()`
   require('telescope').setup {
-    -- You can put your default mappings / updates / etc. in here
-    --  All the info you're looking for is in `:help telescope.setup()`
-    --
-    -- defaults = {
-    --   mappings = {
-    --     i = { ['<c-enter>'] = 'to_fuzzy_refine' },
-    --   },
-    -- },
-    -- pickers = {}
+    defaults = {
+      file_ignore_patterns = {},
+      mappings = {
+        i = {
+          ['<C-j>'] = function(...) return require('telescope.actions').move_selection_next(...) end,
+          ['<C-k>'] = function(...) return require('telescope.actions').move_selection_previous(...) end,
+        },
+      },
+    },
+    pickers = {
+      find_files = {
+        hidden = true,
+        no_ignore = true,
+      },
+      live_grep = {
+        additional_args = { '--hidden', '--no-ignore' },
+      },
+    },
     extensions = {
       ['ui-select'] = { require('telescope.themes').get_dropdown() },
     },
@@ -554,6 +565,7 @@ do
   local builtin = require 'telescope.builtin'
   vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = '[S]earch [H]elp' })
   vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = '[S]earch [K]eymaps' })
+  vim.keymap.set('n', "<leader>s'", builtin.marks, { desc = '[S]earch Marks' })
   vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = '[S]earch [F]iles' })
   vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = '[S]earch [S]elect Telescope' })
   vim.keymap.set({ 'n', 'v' }, '<leader>sw', builtin.grep_string, { desc = '[S]earch current [W]ord' })
@@ -733,7 +745,7 @@ do
   --  See `:help lsp-config` for information about keys and how to configure
   ---@type table<string, vim.lsp.Config>
   local servers = {
-    -- clangd = {},
+    clangd = {},
     -- gopls = {},
     -- pyright = {},
     -- tsc = {},
@@ -743,6 +755,8 @@ do
     --
     -- But for many setups, the LSP (`rust_analyzer`) will work just fine
     -- rust_analyzer = {},
+    zls = {},
+    ts_ls = {},
 
     stylua = {}, -- Used to format Lua code
 
@@ -801,9 +815,17 @@ do
   --    :Mason
   --
   -- You can press `g?` for help in this menu.
-  local ensure_installed = vim.tbl_keys(servers or {})
+  local mason_name_by_server = {
+    ts_ls = 'typescript-language-server',
+    lua_ls = 'lua-language-server',
+  }
+
+  local ensure_installed = {}
+  for server_name in pairs(servers) do
+    table.insert(ensure_installed, mason_name_by_server[server_name] or server_name)
+  end
   vim.list_extend(ensure_installed, {
-    -- You can add other tools here that you want Mason to install
+    'biome', -- Used to format JavaScript and TypeScript
   })
 
   require('mason-tool-installer').setup { ensure_installed = ensure_installed }
@@ -826,8 +848,11 @@ do
     format_on_save = function(bufnr)
       -- You can specify filetypes to autoformat on save here:
       local enabled_filetypes = {
-        -- lua = true,
-        -- python = true,
+        lua = true,
+        javascript = true,
+        javascriptreact = true,
+        typescript = true,
+        typescriptreact = true,
       }
       if enabled_filetypes[vim.bo[bufnr].filetype] then
         return { timeout_ms = 500 }
@@ -840,12 +865,17 @@ do
     },
     -- You can also specify external formatters in here.
     formatters_by_ft = {
-      -- rust = { 'rustfmt' },
-      -- Conform can also run multiple formatters sequentially
-      -- python = { "isort", "black" },
-      --
-      -- You can use 'stop_after_first' to run the first available formatter from the list
-      -- javascript = { "prettierd", "prettier", stop_after_first = true },
+      c = { 'clang-format' },
+      cpp = { 'clang-format' },
+      javascript = { 'biome' },
+      javascriptreact = { 'biome' },
+      typescript = { 'biome' },
+      typescriptreact = { 'biome' },
+    },
+    formatters = {
+      biome = {
+        args = { 'format', '--stdin-file-path', '$FILENAME', '--indent-style=space', '--indent-width=2' },
+      },
     },
   }
 
@@ -896,7 +926,7 @@ do
       -- <c-k>: Toggle signature help
       --
       -- See `:help blink-cmp-config-keymap` for defining your own keymap
-      preset = 'default',
+      preset = 'super-tab',
 
       -- For more advanced Luasnip keymaps (e.g. selecting choice nodes, expansion) see:
       --    https://github.com/L3MON4D3/LuaSnip?tab=readme-ov-file#keymaps
@@ -914,9 +944,21 @@ do
       documentation = { auto_show = false, auto_show_delay_ms = 500 },
     },
 
-    sources = {
-      default = { 'lsp', 'path', 'snippets' },
-    },
+    sources = (function()
+      local sources = {
+        default = { 'lsp', 'path', 'snippets' },
+        providers = {},
+      }
+      if vim.fn.getenv 'DISABLE_SUPERMAVEN' ~= '1' then
+        table.insert(sources.default, 3, 'supermaven')
+        sources.providers.supermaven = {
+          name = 'supermaven',
+          module = 'blink-cmp-supermaven',
+          async = true,
+        }
+      end
+      return sources
+    end)(),
 
     snippets = { preset = 'luasnip' },
 
@@ -948,7 +990,27 @@ do
   vim.pack.add { { src = gh 'nvim-treesitter/nvim-treesitter', version = 'main' } }
 
   -- Ensure basic parsers are installed
-  local parsers = { 'bash', 'c', 'diff', 'html', 'lua', 'luadoc', 'markdown', 'markdown_inline', 'query', 'vim', 'vimdoc' }
+  local parsers = {
+    'bash',
+    'c',
+    'cpp',
+    'diff',
+    'gn',
+    'html',
+    'javascript',
+    'jsdoc',
+    'lua',
+    'luadoc',
+    'markdown',
+    'markdown_inline',
+    'query',
+    'rust',
+    'typescript',
+    'tsx',
+    'vim',
+    'vimdoc',
+    'zig',
+  }
   require('nvim-treesitter').install(parsers)
 
   ---@param buf integer
@@ -1017,13 +1079,13 @@ do
   -- require 'kickstart.plugins.debug'
   -- require 'kickstart.plugins.indent_line'
   -- require 'kickstart.plugins.lint'
-  -- require 'kickstart.plugins.autopairs'
-  -- require 'kickstart.plugins.neo-tree'
+  require 'kickstart.plugins.autopairs'
+  require 'kickstart.plugins.neo-tree'
 
   -- NOTE: You can add your own plugins, configuration, etc. in `lua/custom/plugins/*.lua`.
   --
-  -- For independent modules, uncomment the convenience loader:
-  -- require 'custom.plugins'
+  -- For independent modules, use the convenience loader:
+  require 'custom.plugins'
   --
   -- `custom.plugins` automatically loads files from that directory, but their
   -- order is unspecified. If plugins depend on each other, keep them in the same
@@ -1034,6 +1096,11 @@ do
   -- require 'custom.plugins.ui'
   -- require 'custom.plugins.git'
 end
+
+-- [[ Load custom config ]]
+-- Custom keymaps and autocommands are separated from kickstart for easier upstream merges.
+pcall(require, 'custom.keymaps')
+pcall(require, 'custom.autocmds')
 
 -- The line beneath this is called `modeline`. See `:help modeline`
 -- vim: ts=2 sts=2 sw=2 et
