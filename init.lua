@@ -122,7 +122,17 @@ do
   --  Schedule the setting after `UiEnter` because it can increase startup-time.
   --  Remove this option if you want your OS clipboard to remain independent.
   --  See `:help 'clipboard'`
-  vim.schedule(function() vim.o.clipboard = 'unnamedplus' end)
+  vim.schedule(function()
+    -- Over SSH there is usually no local clipboard tool (xclip/wl-copy/...).
+    -- nvim's auto OSC 52 fallback only triggers when 'clipboard' is empty, but
+    -- we set 'unnamedplus' below, so opt-in explicitly: the OSC 52 provider
+    -- emits `\e]52;c;...` to the TTY, which herdr bridges to the outer
+    -- terminal (e.g. Windows Terminal), landing yanks in the local clipboard.
+    if vim.env.SSH_CONNECTION and vim.env.SSH_CONNECTION ~= '' then
+      vim.g.clipboard = 'osc52'
+    end
+    vim.o.clipboard = 'unnamedplus'
+  end)
 
   -- Enable break indent
   vim.o.breakindent = true
