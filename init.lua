@@ -128,9 +128,7 @@ do
     -- we set 'unnamedplus' below, so opt-in explicitly: the OSC 52 provider
     -- emits `\e]52;c;...` to the TTY, which herdr bridges to the outer
     -- terminal (e.g. Windows Terminal), landing yanks in the local clipboard.
-    if vim.env.SSH_CONNECTION and vim.env.SSH_CONNECTION ~= '' then
-      vim.g.clipboard = 'osc52'
-    end
+    if vim.env.SSH_CONNECTION and vim.env.SSH_CONNECTION ~= '' then vim.g.clipboard = 'osc52' end
     vim.o.clipboard = 'unnamedplus'
   end)
 
@@ -764,7 +762,7 @@ do
     --    https://github.com/mrcjkb/rustaceanvim
     --
     -- But for many setups, the LSP (`rust_analyzer`) will work just fine
-    -- rust_analyzer = {},
+    rust_analyzer = {},
     zls = {},
     ts_ls = {},
 
